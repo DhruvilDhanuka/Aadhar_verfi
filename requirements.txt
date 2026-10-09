@@ -1,0 +1,11 @@
+pillow
+exifread
+numpy
+opencv-python-headless
+pytesseract
+pyzbar
+cryptography
+pyaadhaar
+fastapi
+uvicorn[standard]
+python-multipart

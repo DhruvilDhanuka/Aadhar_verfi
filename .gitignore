@@ -1,0 +1,7 @@
+samples/*
+!samples/.gitkeep
+*.ela_debug.png
+*.ela_tmp.jpg
+__pycache__/
+*.pyc
+venv/

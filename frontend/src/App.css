@@ -1,0 +1,503 @@
+.app {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.app h1 {
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #1a1a1a;
+}
+
+.app-subtitle {
+  text-align: center;
+  color: #666;
+  font-size: 0.95rem;
+  margin-bottom: 32px;
+}
+
+/* ── Privacy banner ─────────────────────────────── */
+.privacy-banner {
+  background-color: #e8f4fd;
+  border: 1px solid #b3d9f2;
+  border-radius: 6px;
+  padding: 10px 16px;
+  margin-bottom: 24px;
+  font-size: 0.85rem;
+  color: #1a5276;
+  text-align: center;
+}
+
+/* ── Form ────────────────────────────────────────── */
+.verify-form {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 28px;
+  margin-bottom: 24px;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #444;
+  margin-bottom: 6px;
+}
+
+.form-group input[type="text"],
+.form-group input[type="date"] {
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  color: #333;
+  background: #fafafa;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #4a90d9;
+  background: #fff;
+}
+
+/* ── File upload ─────────────────────────────────── */
+.upload-area {
+  margin-bottom: 20px;
+}
+
+.upload-area label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #444;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.file-drop-zone {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 32px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+  background: #fafafa;
+}
+
+.file-drop-zone:hover,
+.file-drop-zone.drag-over {
+  border-color: #4a90d9;
+  background: #f0f7ff;
+}
+
+.file-drop-zone.has-file {
+  border-color: #5cb85c;
+  background: #f0faf0;
+}
+
+.file-drop-zone p {
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.file-drop-zone .file-name {
+  color: #333;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.file-drop-zone .file-size {
+  color: #888;
+  font-size: 0.8rem;
+  margin-top: 2px;
+}
+
+.file-drop-zone .change-hint {
+  color: #4a90d9;
+  font-size: 0.8rem;
+  margin-top: 6px;
+}
+
+/* ── Submit button ───────────────────────────────── */
+.submit-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: #4a90d9;
+  color: #fff;
+  transition: background-color 0.2s;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background-color: #357abd;
+}
+
+.submit-btn:disabled {
+  background-color: #a0c4e8;
+  cursor: not-allowed;
+}
+
+.submit-btn.loading {
+  position: relative;
+}
+
+/* ── Error message ───────────────────────────────── */
+.error-msg {
+  background: #fdf0f0;
+  border: 1px solid #e8c4c4;
+  border-radius: 6px;
+  padding: 12px 16px;
+  color: #a94442;
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+}
+
+/* ── Results ─────────────────────────────────────── */
+.results {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Verdict banner */
+.verdict-banner {
+  padding: 20px 28px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.verdict-banner.pass {
+  background-color: #d4edda;
+  border-bottom: 2px solid #5cb85c;
+}
+
+.verdict-banner.fail {
+  background-color: #f8d7da;
+  border-bottom: 2px solid #d9534f;
+}
+
+.verdict-banner.flag,
+.verdict-banner.reupload {
+  background-color: #fff8e1;
+  border-bottom: 2px solid #ffa000;
+}
+
+.verdict-icon {
+  font-size: 1.6rem;
+}
+
+.verdict-text h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.verdict-text p {
+  font-size: 0.88rem;
+  color: #444;
+  line-height: 1.5;
+}
+
+/* ── Re-upload Callout Box ──────────────────────── */
+.reupload-callout {
+  background-color: #fff9e6;
+  border: 1px solid #ffe082;
+  border-left: 4px solid #ff8f00;
+  border-radius: 6px;
+  padding: 14px 20px;
+  margin: 16px 28px;
+}
+
+.reupload-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: #bf360c;
+  margin-bottom: 6px;
+}
+
+.reupload-icon {
+  font-size: 1.1rem;
+}
+
+.reupload-text {
+  font-size: 0.88rem;
+  color: #5d4037;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ── Tri-Comparison Grid ────────────────────────── */
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.compare-card {
+  background: #fdfdfd;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.compare-card-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #edf2f7;
+  padding-bottom: 6px;
+}
+
+.compare-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  padding: 4px 0;
+}
+
+.compare-row .label {
+  color: #64748b;
+}
+
+.compare-row .value {
+  font-weight: 500;
+  color: #0f172a;
+  text-align: right;
+  word-break: break-word;
+}
+
+.compare-row .value.match {
+  color: #15803d;
+  font-weight: 600;
+}
+
+.compare-row .value.mismatch {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.missing-hint {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  font-style: italic;
+  margin: 12px 0;
+}
+
+.compare-badge {
+  margin-top: auto;
+  padding-top: 10px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.badge-neutral {
+  color: #64748b;
+}
+
+.badge-success {
+  color: #15803d;
+}
+
+.badge-warn {
+  color: #b45309;
+}
+
+.check-detail strong {
+  display: block;
+  font-size: 0.9rem;
+  color: #1e293b;
+  margin-bottom: 2px;
+}
+
+.check-detail p {
+  font-size: 0.82rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.check-icon.neutral {
+  color: #94a3b8;
+}
+
+/* Result sections */
+.result-section {
+  padding: 20px 28px;
+  border-bottom: 1px solid #eee;
+}
+
+.result-section:last-child {
+  border-bottom: none;
+}
+
+.result-section h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+/* Fields table */
+.fields-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.fields-table td {
+  padding: 6px 0;
+  font-size: 0.9rem;
+  vertical-align: top;
+}
+
+.fields-table td:first-child {
+  color: #777;
+  width: 140px;
+  padding-right: 16px;
+}
+
+.fields-table td:last-child {
+  color: #222;
+  font-weight: 500;
+}
+
+/* Cross-check items */
+.cross-check-list {
+  list-style: none;
+}
+
+.cross-check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 0.9rem;
+}
+
+.check-icon {
+  font-size: 1rem;
+}
+
+.check-icon.match {
+  color: #5cb85c;
+}
+
+.check-icon.mismatch {
+  color: #d9534f;
+}
+
+/* Forensic scores */
+.score-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+}
+
+.score-label {
+  width: 120px;
+  color: #555;
+}
+
+.score-bar-track {
+  flex: 1;
+  height: 8px;
+  background: #eee;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.score-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.score-bar-fill.good {
+  background-color: #5cb85c;
+}
+
+.score-bar-fill.warn {
+  background-color: #f0ad4e;
+}
+
+.score-bar-fill.bad {
+  background-color: #d9534f;
+}
+
+.score-value {
+  width: 40px;
+  text-align: right;
+  font-weight: 500;
+  color: #333;
+}
+
+/* Notes */
+.notes-list {
+  list-style: none;
+  padding: 0;
+}
+
+.notes-list li {
+  padding: 6px 0;
+  font-size: 0.85rem;
+  color: #666;
+  border-bottom: 1px solid #f5f5f5;
+  line-height: 1.5;
+}
+
+.notes-list li:last-child {
+  border-bottom: none;
+}
+
+.notes-list li::before {
+  content: "· ";
+  color: #999;
+}
+
+/* ── Responsive ──────────────────────────────────── */
+@media (max-width: 600px) {
+  .form-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .app {
+    padding: 20px 16px;
+  }
+
+  .verify-form,
+  .result-section {
+    padding: 20px 16px;
+  }
+}
