@@ -1,7 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.env
+
+# Test samples (ignore images uploaded during testing, keep folder structure)
 samples/*
 !samples/.gitkeep
 *.ela_debug.png
 *.ela_tmp.jpg
-__pycache__/
-*.pyc
-venv/
+*.tmp
+
+# Frontend / Node
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -13,7 +13,7 @@ from difflib import SequenceMatcher
 import cv2
 import pytesseract
 
-# Configure Tesseract path if present on Windows
+# Configure Tesseract path on Windows
 TESSERACT_EXE = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 if os.path.exists(TESSERACT_EXE):
     pytesseract.pytesseract.tesseract_cmd = TESSERACT_EXE
