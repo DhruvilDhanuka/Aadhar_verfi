@@ -54,7 +54,11 @@ function Results({ data }) {
 
           {/* Card 2: Secure QR Code */}
           <div className="compare-card">
-            <div className="compare-card-title">2. UIDAI Secure QR</div>
+            <div className="compare-card-title">
+              {qrData.decoded && data.signature_verified === null
+                ? "2. UIDAI QR (Legacy XML)"
+                : "2. UIDAI Secure QR"}
+            </div>
             <div className="compare-row">
               <span className="label">Status:</span>
               <span className={`value ${qrData.decoded ? "match" : "mismatch"}`}>
@@ -81,16 +85,32 @@ function Results({ data }) {
                 </div>
                 <div className="compare-row">
                   <span className="label">Signature:</span>
-                  <span className={`value ${data.signature_verified ? "match" : "mismatch"}`}>
-                    {data.signature_verified ? "Verified ✅" : "Failed ❌"}
+                  <span
+                    className={`value ${
+                      data.signature_verified === true
+                        ? "match"
+                        : data.signature_verified === false
+                        ? "mismatch"
+                        : "neutral"
+                    }`}
+                  >
+                    {data.signature_verified === true
+                      ? "Verified ✅"
+                      : data.signature_verified === false
+                      ? "Failed ❌"
+                      : "N/A (Legacy XML QR)"}
                   </span>
                 </div>
               </>
             ) : (
-              <p className="missing-hint">Secure QR code is absent or unreadable in this image.</p>
+              <p className="missing-hint">Secure QR code is absent or unreadable in this document.</p>
             )}
             <div className={`compare-badge ${qrData.decoded ? "badge-success" : "badge-warn"}`}>
-              Cryptographic Truth
+              {data.signature_verified === true
+                ? "Cryptographic Truth"
+                : qrData.decoded
+                ? "Decoded QR Data"
+                : "QR Missing"}
             </div>
           </div>
 
@@ -119,7 +139,9 @@ function Results({ data }) {
                 {ocrData.has_aadhaar_markers ? "Found ✅" : "Not Found ❌"}
               </span>
             </div>
-            <div className="compare-badge badge-neutral">Visual Text</div>
+            <div className="compare-badge badge-neutral">
+              {ocrData.is_digilocker ? "DigiLocker (DOB Normalized)" : "Visual Text"}
+            </div>
           </div>
         </div>
       </div>

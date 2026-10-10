@@ -24,14 +24,18 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional
 import datetime
+import re
 import zlib
 import cv2
 from pyzbar.pyzbar import decode as zbar_decode
+import defusedxml.ElementTree as ET
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.exceptions import InvalidSignature
+
+from .ocr import dobs_match
 
 
 # ── Field order for each known Secure QR version ────────────────────────
@@ -88,6 +92,83 @@ def _locate_qr_payload(image_path: str) -> Optional[str]:
         return data or None
 
     return results[0].data.decode("utf-8", errors="ignore")
+
+
+def _qr_format(payload: str) -> str:
+    """Classify a raw QR payload string."""
+    s = payload.strip()
+    if s.isdigit():
+        return "secure"
+    if s.startswith("<"):
+        return "old_xml"
+    return "unknown"
+
+
+_OLD_XML_ROOT = "PrintLetterBarcodeData"
+
+# Attribute map: XML attr -> our internal field name
+_XML_ATTR_MAP = {
+    "name":         "name",
+    "gender":       "gender",
+    "dob":          "dob",
+    "yob":          "yob",          # older cards have year-of-birth only
+    "careOf":       "careof",
+    "co":           "careof",       # alternate spelling
+    "house":        "house",
+    "street":       "street",
+    "lm":           "landmark",
+    "loc":          "location",
+    "vtcName":      "vtc",
+    "vtc":          "vtc",
+    "po":           "postoffice",
+    "dist":         "district",
+    "districtName": "district",
+    "subdist":      "subdistrict",
+    "stateName":    "state",
+    "state":        "state",
+    "pc":           "pincode",
+    "pincode":      "pincode",
+    "locality":     "location",
+}
+
+
+def _parse_old_xml_qr(payload: str) -> dict:
+    """Parse an old-format Aadhaar XML QR (PrintLetterBarcodeData).
+
+    The ``uid`` attribute holds the full 12-digit Aadhaar number — it is
+    masked immediately; only the last 4 digits are kept.
+    Raises ValueError if the XML is invalid or the root tag doesn't match.
+    """
+    try:
+        root = ET.fromstring(payload.strip())
+    except Exception as exc:
+        raise ValueError(f"XML parse error: {exc}") from exc
+
+    # Only trust recognised UIDAI root tags
+    tag = root.tag.split("}")[-1]  # strip namespace if present
+    if tag != _OLD_XML_ROOT:
+        raise ValueError(
+            f"Unexpected XML root tag '{tag}' — expected '{_OLD_XML_ROOT}'"
+        )
+
+    # Mask UID immediately — never put full UID in fields, notes, or logs
+    raw_uid = root.get("uid", "")
+    # Keep only the last 4 digits; redact the rest
+    uid_digits = re.sub(r"\D", "", raw_uid)
+    aadhaar_last_4 = uid_digits[-4:] if len(uid_digits) >= 4 else uid_digits
+
+    data: dict = {"aadhaar_last_4_digit": aadhaar_last_4}
+
+    for xml_attr, field_name in _XML_ATTR_MAP.items():
+        val = root.get(xml_attr)
+        if val is not None and field_name not in data:
+            data[field_name] = val.strip()
+
+    # Normalise dob: if only yob present, use it as dob for cross-checks
+    if "dob" not in data and "yob" in data:
+        data["dob"] = data["yob"]
+
+    return data
 
 
 def _load_uidai_cert(cert_path: str):
@@ -205,15 +286,57 @@ def check_qr(
                    "or glared over — it needs to be readably sharp."],
         )
 
-    # ── Attempt Secure QR decode (numeric big-int) ───────────────────
-    if not qr_payload.strip().isdigit():
+    # ── Route by QR format ────────────────────────────────────────────
+    fmt = _qr_format(qr_payload)
+
+    if fmt == "old_xml":
+        # Old-format XML QR — parse demographics, no signature available
+        try:
+            xml_fields = _parse_old_xml_qr(qr_payload)
+        except ValueError as e:
+            return QrResult(
+                score=0.05, qr_found=True, decoded=False, signature_verified=None,
+                fields={}, cross_check={},
+                notes=[f"QR found, XML detected but could not be parsed: {e}"],
+            )
+
+        cross_check = {}
+        if expected_name and xml_fields.get("name"):
+            qr_name_norm = " ".join(xml_fields["name"].lower().split())
+            exp_name_norm = " ".join(expected_name.lower().split())
+            cross_check["name_match"] = (
+                exp_name_norm in qr_name_norm or qr_name_norm in exp_name_norm
+            )
+        if expected_dob and xml_fields.get("dob"):
+            cross_check["dob_match"] = dobs_match(expected_dob, xml_fields["dob"])
+
+        score = 0.4  # decoded demographics but no crypto proof
+        if cross_check.get("name_match") is False or cross_check.get("dob_match") is False:
+            score = 0.1
+
+        return QrResult(
+            score=round(score, 3),
+            qr_found=True,
+            decoded=True,
+            signature_verified=None,  # old format has no signature
+            fields=xml_fields,
+            cross_check=cross_check,
+            notes=[
+                "Old-format XML QR decoded (PrintLetterBarcodeData). "
+                "No cryptographic signature is present in this QR format — "
+                "demographic fields only. Consider requesting a newer e-Aadhaar "
+                "with a Secure QR for full cryptographic verification."
+            ],
+        )
+
+    if fmt != "secure":
         return QrResult(
             score=0.05, qr_found=True, decoded=False, signature_verified=None,
             fields={}, cross_check={},
-            notes=["QR found but payload is not numeric — likely an old-format "
-                   "XML QR (demographics only, no signature). Cannot verify "
-                   "cryptographically."],
+            notes=["QR found but payload format is unrecognised."],
         )
+
+    # ── Secure QR (numeric big-int) path ─────────────────────────────
 
     try:
         fields = _decode_secure_qr(qr_payload)
@@ -221,14 +344,13 @@ def check_qr(
         return QrResult(
             score=0.05, qr_found=True, decoded=False, signature_verified=None,
             fields={}, cross_check={},
-            notes=[f"QR was read but couldn't be parsed as a Secure QR payload: {e}. "
-                   "Could be an old-format Aadhaar QR (demographics-only XML, no "
-                   "signature) rather than the newer Secure QR."],
+            notes=[f"QR was read but couldn't be parsed as a Secure QR payload: {e}."],
         )
 
     # Pull out crypto material before building the user-visible fields dict
     signed_data = fields.pop("_signed_data")
     signature_bytes = fields.pop("_signature")
+
 
     # Never keep the full reference id around longer than needed.
     safe_fields = {k: v for k, v in fields.items() if k != "referenceid"}
@@ -263,11 +385,13 @@ def check_qr(
 
     cross_check = {}
     if expected_name is not None:
+        qr_name = fields.get("name", "").strip().lower()
+        exp_name_clean = expected_name.strip().lower()
         cross_check["name_match"] = (
-            expected_name.strip().lower() == fields.get("name", "").strip().lower()
+            exp_name_clean in qr_name or qr_name in exp_name_clean
         )
     if expected_dob is not None:
-        cross_check["dob_match"] = expected_dob.strip() == fields.get("dob", "").strip()
+        cross_check["dob_match"] = dobs_match(expected_dob, fields.get("dob", ""))
 
     # --- scoring ---
     score = 0.3  # baseline for "found + decoded a Secure QR at all"

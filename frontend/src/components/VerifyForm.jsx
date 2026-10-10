@@ -4,6 +4,7 @@ function VerifyForm({ onSubmit, loading }) {
   const [name, setName] = useState("");
   const [dob, setDob] = useState("");
   const [file, setFile] = useState(null);
+  const [fileError, setFileError] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -19,18 +20,32 @@ function VerifyForm({ onSubmit, loading }) {
     onSubmit({ name: name.trim(), dob: formattedDob, file });
   };
 
+  const isPdfFile = (f) => {
+    if (!f) return false;
+    return f.type === "application/pdf" || /\.pdf$/i.test(f.name);
+  };
+
+  const processSelectedFile = (f) => {
+    if (!f) return;
+    if (isPdfFile(f)) {
+      setFile(f);
+      setFileError(null);
+    } else {
+      setFile(null);
+      setFileError("Only genuine PDF documents from UIDAI, DigiLocker, or mAadhaar are accepted. Images, scans, and screenshots cannot be verified.");
+    }
+  };
+
   const handleFileChange = (e) => {
     const f = e.target.files?.[0];
-    if (f) setFile(f);
+    processSelectedFile(f);
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     setDragOver(false);
     const f = e.dataTransfer.files?.[0];
-    if (f && (f.type === "image/jpeg" || f.type === "image/png")) {
-      setFile(f);
-    }
+    processSelectedFile(f);
   };
 
   const handleDragOver = (e) => {
@@ -73,9 +88,17 @@ function VerifyForm({ onSubmit, loading }) {
       </div>
 
       <div className="upload-area">
-        <label>Aadhaar Card Photo</label>
+        <div className="upload-header">
+          <label>Official Aadhaar Document (PDF Only)</label>
+          <div className="sources-pills">
+            <span className="source-pill">🏛️ myAadhaar</span>
+            <span className="source-pill">📂 DigiLocker</span>
+            <span className="source-pill">📱 mAadhaar</span>
+          </div>
+        </div>
+
         <div
-          className={`file-drop-zone${dragOver ? " drag-over" : ""}${file ? " has-file" : ""}`}
+          className={`file-drop-zone${dragOver ? " drag-over" : ""}${file ? " has-file" : ""}${fileError ? " has-error" : ""}`}
           onClick={() => fileInputRef.current?.click()}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -83,22 +106,41 @@ function VerifyForm({ onSubmit, loading }) {
         >
           {file ? (
             <>
+              <div className="pdf-icon-indicator">📄 PDF Ready</div>
               <p className="file-name">{file.name}</p>
               <p className="file-size">{formatFileSize(file.size)}</p>
               <p className="change-hint">Click to change file</p>
             </>
           ) : (
-            <p>
-              Drag & drop an Aadhaar photo here, or click to browse
-              <br />
-              <small>PNG or JPEG, max 10 MB</small>
-            </p>
+            <div>
+              <p className="drop-main-text">
+                Drag &amp; drop your official Aadhaar PDF here, or click to browse
+              </p>
+              <p className="source-requirement-note">
+                Only genuine PDF files downloaded from <strong>myAadhaar (UIDAI)</strong>, <strong>DigiLocker</strong>, or <strong>mAadhaar</strong> are accepted.
+              </p>
+              <div className="pdf-validation-guidelines">
+                <span className="guideline-badge">✓ UIDAI Digital Signature required</span>
+                <span className="guideline-badge restriction">✕ Photos/Scans/Images rejected</span>
+              </div>
+              <small className="password-hint">
+                🔒 Password-protected PDFs are unlocked automatically using your registration Name &amp; Birth Year (e.g., DHRU2007)
+              </small>
+            </div>
           )}
         </div>
+
+        {fileError && (
+          <div className="file-format-error">
+            <span className="error-icon">⚠️</span>
+            <span>{fileError}</span>
+          </div>
+        )}
+
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/png,image/jpeg,image/jpg"
+          accept="application/pdf,.pdf"
           onChange={handleFileChange}
           style={{ display: "none" }}
         />
@@ -109,7 +151,7 @@ function VerifyForm({ onSubmit, loading }) {
         className={`submit-btn${loading ? " loading" : ""}`}
         disabled={!file || loading}
       >
-        {loading ? "Verifying..." : "Verify"}
+        {loading ? "Verifying Digital Signature & Credentials..." : "Verify Aadhaar"}
       </button>
     </form>
   );

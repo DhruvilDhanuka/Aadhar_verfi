@@ -9,3 +9,6 @@ pyaadhaar
 fastapi
 uvicorn[standard]
 python-multipart
+pypdfium2
+defusedxml
+pyhanko

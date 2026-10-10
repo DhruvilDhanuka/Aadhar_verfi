@@ -81,56 +81,150 @@
   margin-bottom: 20px;
 }
 
-.upload-area label {
-  font-size: 0.85rem;
+.upload-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.upload-header label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0;
+}
+
+.sources-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.source-pill {
+  font-size: 0.72rem;
   font-weight: 500;
-  color: #444;
-  margin-bottom: 6px;
-  display: block;
+  padding: 3px 8px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  color: #334155;
 }
 
 .file-drop-zone {
-  border: 2px dashed #ccc;
-  border-radius: 8px;
-  padding: 32px 20px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 28px 20px;
   text-align: center;
   cursor: pointer;
-  transition: border-color 0.2s, background-color 0.2s;
-  background: #fafafa;
+  transition: all 0.2s ease;
+  background: #f8fafc;
 }
 
 .file-drop-zone:hover,
 .file-drop-zone.drag-over {
-  border-color: #4a90d9;
-  background: #f0f7ff;
+  border-color: #2563eb;
+  background: #eff6ff;
 }
 
 .file-drop-zone.has-file {
-  border-color: #5cb85c;
-  background: #f0faf0;
+  border-color: #10b981;
+  background: #f0fdf4;
 }
 
-.file-drop-zone p {
-  color: #888;
-  font-size: 0.9rem;
+.file-drop-zone.has-error {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.pdf-icon-indicator {
+  display: inline-block;
+  padding: 4px 10px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 16px;
+  margin-bottom: 8px;
+}
+
+.drop-main-text {
+  color: #1e293b;
+  font-weight: 500;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+
+.source-requirement-note {
+  color: #475569;
+  font-size: 0.84rem;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.pdf-validation-guidelines {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.guideline-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.guideline-badge.restriction {
+  background: #fff1f2;
+  color: #be123c;
+  border-color: #fecdd3;
+}
+
+.password-hint {
+  display: block;
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.file-format-error {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  color: #b91c1c;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .file-drop-zone .file-name {
-  color: #333;
-  font-weight: 500;
-  font-size: 0.95rem;
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 1rem;
 }
 
 .file-drop-zone .file-size {
-  color: #888;
-  font-size: 0.8rem;
+  color: #64748b;
+  font-size: 0.82rem;
   margin-top: 2px;
 }
 
 .file-drop-zone .change-hint {
-  color: #4a90d9;
-  font-size: 0.8rem;
-  margin-top: 6px;
+  color: #2563eb;
+  font-size: 0.82rem;
+  font-weight: 500;
+  margin-top: 8px;
 }
 
 /* ── Submit button ───────────────────────────────── */
