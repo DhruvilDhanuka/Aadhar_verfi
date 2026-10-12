@@ -9,11 +9,6 @@ env/
 ENV/
 .env
 
-# Test samples (ignore images uploaded during testing, keep folder structure)
-samples/*
-!samples/.gitkeep
-*.ela_debug.png
-*.ela_tmp.jpg
 *.tmp
 
 # Frontend / Node
