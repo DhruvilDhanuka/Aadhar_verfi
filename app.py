@@ -10,7 +10,6 @@ from __future__ import annotations
 import tempfile
 import os
 import re
-import json
 from datetime import datetime
 
 import io
@@ -24,7 +23,7 @@ from aadhar_verify.main import run_pipeline
 
 app = FastAPI(
     title="Aadhaar Verify API",
-    description="Upload an Aadhaar card photo and verify it against registration details.",
+    description="Upload an official e-Aadhaar PDF and verify it against registration details.",
     version="1.0.0",
 )
 
@@ -36,21 +35,54 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-CERT_PATH = os.path.join(os.path.dirname(__file__), "keys", "uidai_qr_signing_cert.cer")
-SAMPLES_DIR = os.path.join(os.path.dirname(__file__), "samples")
-os.makedirs(SAMPLES_DIR, exist_ok=True)
+
+def get_aadhaar_pdf_passwords(expected_name: str, expected_dob: str) -> list[str]:
+    """
+    Generate candidate UIDAI e-Aadhaar password.
+    Standard UIDAI rule: First 4 letters of name in CAPITAL + 4-digit Year of Birth.
+    Spaces and non-letters are stripped (e.g. 'Om Prakash' -> 'OMPR' + '2000' -> 'OMPR2000').
+    """
+    clean_name = re.sub(r"[^A-Za-z]", "", expected_name).upper()
+    yob_match = re.search(r"\b(19\d{2}|20\d{2})\b", expected_dob)
+    if not clean_name or not yob_match:
+        return []
+
+    year = yob_match.group(1)
+    return [clean_name[:4] + year]
 
 
 def signed_by_uidai(pdf_bytes: bytes, passwords: list[str]) -> bool:
     """Return True if the PDF carries a digital signature from UIDAI."""
     r = PdfFileReader(io.BytesIO(pdf_bytes))
     if r.encrypted:
-        for pwd in (passwords or [""]):
+        if not passwords:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "This e-Aadhaar PDF is password-protected. "
+                    "Please enter your Name and Date of Birth in the registration form "
+                    "so the document can be unlocked."
+                ),
+            )
+        decrypted = False
+        for pwd in passwords:
             try:
                 r.decrypt(pwd)
+                decrypted = True
                 break
             except Exception:
                 continue
+        if not decrypted:
+            attempted_pwd = passwords[0]
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Unable to unlock password-protected e-Aadhaar PDF. "
+                    f"UIDAI e-Aadhaar password is the first 4 letters of your name in CAPITAL and your 4-digit Year of Birth (e.g., '{attempted_pwd}'). "
+                    f"The registration details you entered did not unlock this file. "
+                    f"Please verify your registration Name and Date of Birth match your official Aadhaar card and submit again."
+                ),
+            )
     for sig in r.embedded_signatures:
         cert = sig.signer_cert
         if "uidai.net.in" in cert.subject.human_friendly.lower():
@@ -60,39 +92,8 @@ def signed_by_uidai(pdf_bytes: bytes, passwords: list[str]) -> bool:
     return False
 
 
-def get_aadhaar_pdf_passwords(expected_name: str, expected_dob: str) -> list[str]:
-    """
-    Generate candidate UIDAI e-Aadhaar passwords.
-    Standard format: First 4 letters of name in CAPITAL + 4-digit Year of Birth.
-    Example: 'Dhruvil' + '10-04-2007' -> 'DHRU2007'.
-    """
-    clean_name = re.sub(r"[^A-Za-z]", "", expected_name).upper()
-    yob_match = re.search(r"\b(19\d{2}|20\d{2})\b", expected_dob)
-    if not clean_name or not yob_match:
-        return []
-
-    year = yob_match.group(1)
-    passwords = []
-
-    # 1. Primary: first 4 letters of cleaned full name + year
-    name_4 = clean_name[:4] if len(clean_name) >= 4 else clean_name
-    passwords.append(name_4 + year)
-
-    # 2. Variant: first 4 letters of first name word (if name has multiple words)
-    words = [re.sub(r"[^A-Za-z]", "", w).upper() for w in expected_name.split() if w.strip()]
-    if words and len(words[0]) >= 4:
-        p2 = words[0][:4] + year
-        if p2 not in passwords:
-            passwords.append(p2)
-
-    return passwords
-
-
-def open_pdf_document(pdf_path: str, expected_name: str, expected_dob: str) -> pdfium.PdfDocument:
-    """
-    Open a PDF document. If password-protected, automatically attempt unlocking
-    using candidate passwords derived from registration Name and Year of Birth.
-    """
+def open_pdf_document(pdf_path: str, passwords: list[str]) -> pdfium.PdfDocument:
+    """Open a PDF document. If password-protected, unlocks using candidate password."""
     # 1. Try opening without a password (for unencrypted / already unlocked PDFs)
     try:
         doc = pdfium.PdfDocument(pdf_path)
@@ -101,25 +102,9 @@ def open_pdf_document(pdf_path: str, expected_name: str, expected_dob: str) -> p
             return doc
         doc.close()
     except Exception:
-        pass  # Document is password-protected or encrypted
+        pass
 
-    # 2. PDF requires password — check if user provided registration info
-    clean_name = re.sub(r"[^A-Za-z]", "", expected_name).upper()
-    yob_match = re.search(r"\b(19\d{2}|20\d{2})\b", expected_dob)
-
-    if not clean_name or not yob_match:
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                "This e-Aadhaar PDF is password-protected. "
-                "Please enter your Name and Date of Birth in the registration form "
-                "so the document can be unlocked."
-            ),
-        )
-
-    passwords = get_aadhaar_pdf_passwords(expected_name, expected_dob)
-    attempted_pwd = passwords[0] if passwords else f"{clean_name[:4]}{yob_match.group(1)}"
-
+    # 2. Open with candidate password
     for pwd in passwords:
         try:
             doc = pdfium.PdfDocument(pdf_path, password=pwd)
@@ -130,16 +115,7 @@ def open_pdf_document(pdf_path: str, expected_name: str, expected_dob: str) -> p
         except Exception:
             continue
 
-    # 3. Password failed — wrong registration details
-    raise HTTPException(
-        status_code=400,
-        detail=(
-            f"Unable to unlock password-protected e-Aadhaar PDF. "
-            f"UIDAI e-Aadhaar password is the first 4 letters of your name in CAPITAL and your 4-digit Year of Birth (e.g., '{attempted_pwd}'). "
-            f"The registration details you entered (Name: '{expected_name}', DOB: '{expected_dob}') did not unlock this file. "
-            f"Please verify your registration Name and Date of Birth match your official Aadhaar card and submit again."
-        ),
-    )
+    raise HTTPException(status_code=400, detail="Unable to open or decrypt the PDF document.")
 
 
 @app.post("/api/verify")
@@ -149,11 +125,7 @@ async def verify(
     expected_dob: str = Form(""),
 ):
     """
-    Verify an Aadhaar card PDF or image.
-
-    - **aadhaar_image**: PDF or image of the Aadhaar card (e-Aadhaar, mAadhaar, or photo/screenshot).
-    - **expected_name**: Name from registration (for cross-check). Optional.
-    - **expected_dob**: DOB from registration as DD-MM-YYYY or YYYY-MM-DD (for cross-check). Optional.
+    Verify an Aadhaar card PDF
     """
     # Validate file type — PDF only
     content_type = (aadhaar_image.content_type or "").lower()
@@ -171,8 +143,8 @@ async def verify(
     file_bytes = await aadhaar_image.read()
     if len(file_bytes) == 0:
         raise HTTPException(status_code=400, detail="Uploaded file is empty.")
-    if len(file_bytes) > 20 * 1024 * 1024:  # 20 MB limit
-        raise HTTPException(status_code=400, detail="File too large. Max 20 MB.")
+    if len(file_bytes) > 5 * 1024 * 1024:  # 5 MB limit
+        raise HTTPException(status_code=400, detail="File too large. Max 5 MB.")
 
     tmp_pdf = None
     tmp_img = None
@@ -196,25 +168,23 @@ async def verify(
         # ── Step 2: Render first page → image for QR + OCR ───────────────
         pdf_doc = open_pdf_document(
             pdf_path=tmp_pdf.name,
-            expected_name=expected_name.strip(),
-            expected_dob=expected_dob.strip(),
+            passwords=passwords,
         )
-        if len(pdf_doc) == 0:
+        
+        try:
+            if len(pdf_doc) == 0:
+                raise HTTPException(status_code=400, detail="PDF has no pages.")
+            bitmap = pdf_doc[0].render(scale=200 / 72, rotation=0)
+            pil_image = bitmap.to_pil()
+            pil_image.save(tmp_img.name, format="PNG")
+        finally:
             pdf_doc.close()
-            raise HTTPException(status_code=400, detail="PDF has no pages.")
-        page = pdf_doc[0]
-        bitmap = page.render(scale=200 / 72, rotation=0)
-        pil_image = bitmap.to_pil()
-        pil_image.save(tmp_img.name, format="PNG")
-        pdf_doc.close()
 
         # ── Step 3: QR scan + OCR pipeline ───────────────────────────────
         result = run_pipeline(
             image_path=tmp_img.name,
-            cert_path=CERT_PATH,
             expected_name=expected_name.strip() or None,
             expected_dob=expected_dob.strip() or None,
-            is_image=False,
         )
     except HTTPException:
         raise
@@ -229,7 +199,7 @@ async def verify(
                 except OSError:
                     pass
 
-    return JSONResponse(content=json.loads(json.dumps(result, default=str)))
+    return JSONResponse(content=result)
 
 
 @app.get("/api/health")

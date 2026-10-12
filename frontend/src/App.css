@@ -509,52 +509,7 @@
   color: #d9534f;
 }
 
-/* Forensic scores */
-.score-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
-  font-size: 0.9rem;
-}
 
-.score-label {
-  width: 120px;
-  color: #555;
-}
-
-.score-bar-track {
-  flex: 1;
-  height: 8px;
-  background: #eee;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.score-bar-fill {
-  height: 100%;
-  border-radius: 4px;
-  transition: width 0.5s ease;
-}
-
-.score-bar-fill.good {
-  background-color: #5cb85c;
-}
-
-.score-bar-fill.warn {
-  background-color: #f0ad4e;
-}
-
-.score-bar-fill.bad {
-  background-color: #d9534f;
-}
-
-.score-value {
-  width: 40px;
-  text-align: right;
-  font-weight: 500;
-  color: #333;
-}
 
 /* Notes */
 .notes-list {
